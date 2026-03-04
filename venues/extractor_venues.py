@@ -12,7 +12,7 @@ from venues.config_venues import (
     ROOFTOP_KEYWORDS, PRIVATE_EVENT_KEYWORDS, BAR_SERVICE_KEYWORDS,
     VIEWS_KEYWORDS, INDOOR_BACKUP_KEYWORDS, NIGHTLIFE_KEYWORDS,
     AFROCULTURAL_KEYWORDS, EXCLUDE_KEYWORDS,
-    BROOKLYN_NEIGHBORHOODS, MANHATTAN_NEIGHBORHOODS,
+    PRIORITY_NEIGHBORHOODS,
     VENUE_TYPE_KEYWORDS, CAPACITY_PATTERNS,
 )
 
@@ -29,36 +29,71 @@ EMAIL_REGEX = re.compile(
 IGNORE_EMAIL_DOMAINS = {
     "example.com", "sentry.io", "w3.org", "schema.org", "google.com",
     "apple.com", "cloudflare.com", "wix.com", "squarespace.com",
-    "shopify.com", "wordpress.com", "godaddy.com",
+    "shopify.com", "wordpress.com", "godaddy.com", "sentry.wix.com",
+    "sentry-cdn.com", "domain.com", "yoursite.com", "email.com",
+}
+
+IGNORE_EXTENSIONS = {
+    ".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".pdf", ".mp4",
+    ".js", ".css", ".ico", ".woff", ".woff2", ".ashx",
 }
 
 CONTACT_EMAIL_PREFIXES = [
     "events", "booking", "book", "hire", "private", "info",
-    "contact", "hello", "reservations", "parties",
+    "contact", "hello", "reservations", "parties", "sales", "group",
 ]
+
+
+def is_valid_email(email: str) -> bool:
+    """Check if email looks like a real business contact."""
+    e = email.lower().strip()
+    
+    # Basic structural check
+    if "@" not in e: return False
+    
+    # Ignore image assets and common non-email files
+    if any(e.endswith(ext) for ext in IGNORE_EXTENSIONS):
+        return False
+        
+    local, domain = e.rsplit("@", 1)
+    
+    # Domain validation
+    if any(s in domain for s in ["sentry", "wix-code", "squarespace", "shopify", "example"]): 
+        return False
+    if domain in IGNORE_EMAIL_DOMAINS: return False
+    if len(domain) < 4 or "." not in domain: return False
+    if domain.split(".")[-1] in {"png", "jpg", "js", "css"}: return False
+    
+    # Local part validation
+    if len(local) < 2 or len(local) > 40: return False
+    # Block long hex-looking strings (likely crash reporting IDs)
+    if re.match(r'^[a-f0-9]{20,}$', local): return False
+    
+    if local in {"noreply", "no-reply", "support", "abuse", "webmaster"}:
+        return False
+        
+    return True
 
 
 def extract_contact(text: str, html: str = "") -> str:
     """Extract most relevant contact email for venue booking."""
+    # Narrow the focus to improve accuracy
     raw = set(EMAIL_REGEX.findall(text + " " + html))
-    valid = []
-    for email in raw:
-        local, domain = email.lower().rsplit("@", 1)
-        if domain in IGNORE_EMAIL_DOMAINS:
-            continue
-        if len(local) < 2 or len(domain) < 4:
-            continue
-        valid.append(email.lower())
+    valid = [e.lower() for e in raw if is_valid_email(e)]
+    
+    if not valid:
+        return ""
 
     def _priority(e):
         local = e.split("@")[0]
+        # Prioritize prefixes like 'events@' or 'booking@'
         for i, prefix in enumerate(CONTACT_EMAIL_PREFIXES):
-            if local.startswith(prefix):
+            if local == prefix or local.startswith(prefix + "."):
                 return i
         return 99
 
     valid = sorted(valid, key=_priority)
-    return valid[0] if valid else ""
+    return valid[0]
 
 
 def extract_phone(text: str) -> str:
@@ -75,14 +110,35 @@ def extract_phone(text: str) -> str:
 # CAPACITY EXTRACTION
 # ──────────────────────────────────────────────
 def extract_capacity(text: str) -> str:
-    """Try to parse venue capacity from page text. Returns string."""
+    """
+    Parse all capacity candidates from text and return the 'best' one.
+    Prioritizes numbers in the target 150-400 range.
+    """
+    candidates = []
     for pattern in CAPACITY_PATTERNS:
-        m = re.search(pattern, text, re.IGNORECASE)
-        if m:
-            num = int(m.group(1))
-            if 50 < num < 2000:   # sanity bounds
-                return str(num)
-    return ""
+        matches = re.finditer(pattern, text, re.IGNORECASE)
+        for m in matches:
+            try:
+                num = int(m.group(1))
+                if 50 < num < 2000:
+                    candidates.append(num)
+            except (ValueError, IndexError):
+                continue
+                
+    if not candidates:
+        return ""
+        
+    # Pick the best candidate:
+    # 1. Prefer numbers in the 200-300 range
+    ideal = [c for c in candidates if 200 <= c <= 300]
+    if ideal: return str(max(ideal))
+    
+    # 2. Prefer numbers in the 150-400 range
+    acceptable = [c for c in candidates if 150 <= c <= 400]
+    if acceptable: return str(max(acceptable))
+    
+    # 3. Otherwise return the largest reasonable number
+    return str(max(candidates))
 
 
 # ──────────────────────────────────────────────
@@ -107,24 +163,23 @@ def detect_venue_type(text: str, title: str = "", url: str = "") -> str:
 # ──────────────────────────────────────────────
 def detect_neighborhood(text: str, address: str = "") -> Tuple[str, str]:
     """
-    Returns (neighborhood, borough) tuple.
-    Searches text and address for known NYC neighborhoods.
+    Returns (neighborhood, city) tuple.
+    Searches text and address for known priority neighborhoods across cities.
     """
     combined = (address + " " + text).lower()
 
-    for hood in BROOKLYN_NEIGHBORHOODS:
-        if hood in combined:
-            return hood.title(), "Brooklyn"
+    for city, neighborhoods in PRIORITY_NEIGHBORHOODS.items():
+        for hood in neighborhoods:
+            if hood in combined:
+                return hood.title(), city.capitalize()
 
-    for hood in MANHATTAN_NEIGHBORHOODS:
-        if hood in combined:
-            return hood.title(), "Manhattan"
-
-    # Fallback: detect borough only
-    if "brooklyn" in combined:
-        return "", "Brooklyn"
-    if "manhattan" in combined or "new york, ny" in combined:
-        return "", "Manhattan"
+    # Fallback: detect city only
+    if "new york" in combined or "nyc" in combined or "brooklyn" in combined or "manhattan" in combined:
+        return "", "Nyc"
+    if "atlanta" in combined or "atl" in combined:
+        return "", "Atlanta"
+    if "dallas" in combined or "dfw" in combined:
+        return "", "Dallas"
 
     return "", ""
 
@@ -171,7 +226,15 @@ def extract_description(html: str, text: str = "") -> str:
 # ──────────────────────────────────────────────
 def _keyword_hit(text: str, keywords: List[str]) -> bool:
     t = text.lower()
-    return any(kw in t for kw in keywords)
+    for kw in keywords:
+        if kw in t:
+            # Check for negative context within 20 chars before the keyword
+            idx = t.find(kw)
+            context = t[max(0, idx-20):idx]
+            if any(neg in context for neg in ["no ", "not ", "don't ", "cannot ", "closed "]):
+                continue
+            return True
+    return False
 
 
 def detect_signals(text: str, html: str = "") -> Dict[str, bool]:

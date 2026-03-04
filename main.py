@@ -8,15 +8,13 @@ MODES
 
 USAGE
 ─────
-  python main.py --mode venues              # Full venue run → output/snitc_venues.csv
-  python main.py --mode venues   --test     # Test: 5 seeds, no CSV export
-  python main.py --mode venues   --seeds    # Seeds-only, skip live enrichment
+  python main.py --mode venues --city nyc   # Default city
+  python main.py --mode venues --city dallas --test
+  python main.py --mode venues --city atlanta --seeds
 
-  python main.py --mode sponsors            # Full sponsor run → output/snitc_sponsors.csv
-  python main.py --mode sponsors --test     # Test: 5 seeds, no CSV export
-  python main.py --mode sponsors --seeds    # Seeds-only
+  python main.py --mode sponsors --city dallas # Sponsor mode with city filter
 
-  python main.py                            # Defaults to BOTH modes (venues first, then sponsors)
+  python main.py                            # Defaults to BOTH modes, NYC city
 
 PIPELINE (per mode)
 ───────────────────
@@ -45,6 +43,7 @@ def _parse_args():
     """Parse CLI arguments."""
     args = sys.argv[1:]
     mode       = None
+    city       = "nyc"
     test_mode  = "--test"  in args
     seeds_only = "--seeds" in args
 
@@ -54,7 +53,12 @@ def _parse_args():
         elif a == "--mode" and args.index(a) + 1 < len(args):
             mode = args[args.index(a) + 1].lower()
 
-    # Also accept positional: python main.py venues
+        elif a.startswith("--city="):
+            city = a.split("=", 1)[1].lower()
+        elif a == "--city" and args.index(a) + 1 < len(args):
+            city = args[args.index(a) + 1].lower()
+
+    # Also accept positional: python main.py venues dallas
     if mode is None:
         for a in args:
             if a in ("venues", "sponsors", "both"):
@@ -64,26 +68,31 @@ def _parse_args():
     if mode is None:
         mode = "both"
 
-    return mode, test_mode, seeds_only
+    return mode, city, test_mode, seeds_only
 
 
 def main():
-    mode, test_mode, seeds_only = _parse_args()
+    mode, city, test_mode, seeds_only = _parse_args()
 
     valid_modes = ("venues", "sponsors", "both")
     if mode not in valid_modes:
         print(f"❌  Unknown mode '{mode}'. Use: {', '.join(valid_modes)}")
+        sys.exit(1)
+        
+    valid_cities = ("nyc", "dallas", "atlanta")
+    if city not in valid_cities:
+        print(f"❌  Unknown city '{city}'. Use: {', '.join(valid_cities)}")
         sys.exit(1)
 
     start = time.time()
 
     if mode in ("venues", "both"):
         from venues.pipeline import run_venue_pipeline
-        run_venue_pipeline(test_mode=test_mode, seeds_only=seeds_only)
+        run_venue_pipeline(city=city, test_mode=test_mode, seeds_only=seeds_only)
 
     if mode in ("sponsors", "both"):
         from sponsors.pipeline import run_sponsor_pipeline
-        run_sponsor_pipeline(test_mode=test_mode, seeds_only=seeds_only)
+        run_sponsor_pipeline(city=city, test_mode=test_mode, seeds_only=seeds_only)
 
     elapsed = time.time() - start
     logger.info(f"\n⏱  Total runtime: {elapsed:.1f}s")

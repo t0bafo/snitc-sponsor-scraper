@@ -21,7 +21,8 @@ from venues.extractor_venues import (
     extract_description, detect_signals, generate_venue_notes,
 )
 from venues.classifier_venues import classify_priority
-from venues.exporter_venues import export_venues_to_csv, print_venue_preview
+from venues.exporter_venues import export_venues_to_csv
+from venues.searcher_venues import discover_venues
 from venues.config_venues import EVENT_NAME, EVENT_DATE, EVENT_CAPACITY
 
 logger = logging.getLogger(__name__)
@@ -32,7 +33,7 @@ def _base_url(url: str) -> str:
     return f"{p.scheme}://{p.netloc}"
 
 
-def enrich_venue(venue: Dict) -> Dict:
+def enrich_venue(venue: Dict, city: str = "nyc") -> Dict:
     """
     Given a venue dict (from seeds or discovered), fetch its website live
     and enrich with live contact, capacity, description, type, signals.
@@ -57,6 +58,19 @@ def enrich_venue(venue: Dict) -> Dict:
         venue["website"] = page_data["url"]   # follow redirects
         html = page_data["html"]
         text = page_data["text"]
+        
+        # If venue name is missing (because it was dynamically discovered), grab the <title>
+        if not venue.get("venue_name"):
+            from bs4 import BeautifulSoup
+            import re
+            try:
+                soup = BeautifulSoup(html[:10000], "lxml")
+                title = soup.title.string.strip() if soup.title else "Unknown Venue"
+                # Strip off common tags like " | Home" or " - Dallas"
+                clean_title = re.sub(r'\s*[|\-–—:]\s*.+$', '', title).strip()
+                venue["venue_name"] = clean_title if clean_title else title
+            except Exception:
+                venue["venue_name"] = "Unknown Venue"
     else:
         logger.debug(f"  Could not fetch {url}, using seed data only")
 
@@ -96,13 +110,13 @@ def enrich_venue(venue: Dict) -> Dict:
         if not venue.get("venue_type"):
             venue["venue_type"] = detect_venue_type(combined_text, url=url)
 
-        # Neighborhood / borough — only fill if missing
-        if not venue.get("neighborhood") or not venue.get("borough"):
+        # Neighborhood / city — only fill if missing
+        if not venue.get("neighborhood") or not venue.get("city"):
             hood, boro = detect_neighborhood(combined_text, venue.get("location", ""))
             if hood and not venue.get("neighborhood"):
                 venue["neighborhood"] = hood
-            if boro and not venue.get("borough"):
-                venue["borough"] = boro
+            if not venue.get("city"):
+                venue["city"] = city.capitalize()
 
         # Description — prefer live meta over seed if longer
         live_desc = extract_description(html)
@@ -118,6 +132,7 @@ def enrich_venue(venue: Dict) -> Dict:
         venue.get("description", "") + " " + seed_notes
     )
     signals = detect_signals(signal_text)
+    signals["city"] = city
 
     # Supplement signals with seed notes keywords
     seed_lower = seed_notes.lower()
@@ -148,7 +163,7 @@ def _html_to_text(html: str) -> str:
         return html[:2000]
 
 
-def run_venue_pipeline(test_mode: bool = False, seeds_only: bool = False) -> str:
+def run_venue_pipeline(city: str = "nyc", test_mode: bool = False, seeds_only: bool = False) -> str:
     """
     Main venue pipeline. Returns path to output CSV.
     """
@@ -167,22 +182,35 @@ def run_venue_pipeline(test_mode: bool = False, seeds_only: bool = False) -> str
 
     # ── Step 1: Load seeds ──────────────────────────────────
     logger.info("STEP 1/4 — Loading curated seed venues...")
-    seeds = SEED_VENUES[:5] if test_mode else SEED_VENUES
+    
+    # Load city-specific seeds
+    city_seeds = SEED_VENUES.get(city.lower(), [])
+    seeds = city_seeds[:5] if test_mode else city_seeds
     logger.info(f"  {len(seeds)} seed venues loaded")
+
+    if not seeds_only:
+        logger.info("\n── LIVE DISCOVERY (Phase 3) ──")
+        logger.info("  Searching the web for new venues...")
+        # Reduce the number of search results checked per query in test mode
+        discovered = discover_venues(city=city, num_results=2 if test_mode else 15)
+        logger.info(f"  Found {len(discovered)} new unverified venue URLs")
+        seeds.extend(discovered)
 
     total = len(seeds)
     logger.info(f"\nSTEP 2/4 — Enriching {total} venues (scraping live websites)...")
-    logger.info(f"  Output will be saved to: output/snitc_venues.csv\n")
+    logger.info(f"  Target city: {city}")
 
     venues: List[Dict] = []
     failed = 0
 
     for i, seed in enumerate(seeds):
-        name = seed.get("venue_name", "?")
+        # We might not have a name yet if it was dynamically discovered
+        name = seed.get("venue_name", "")
         url  = seed.get("website", "")
-        logger.info(f"  [{i+1}/{total}] {name} — {url[:65]}")
+        display_name = name if name else "(Discovered Venue)"
+        logger.info(f"  [{i+1}/{total}] {display_name} — {url[:65]}")
         try:
-            enriched = enrich_venue(dict(seed))
+            enriched = enrich_venue(dict(seed), city=city)
             venues.append(enriched)
             cap      = enriched.get("capacity", "?")
             priority = enriched.get("priority", "?")
@@ -199,29 +227,18 @@ def run_venue_pipeline(test_mode: bool = False, seeds_only: bool = False) -> str
 
     logger.info(f"\n✓ Enriched {len(venues)} venues ({failed} errors)")
 
-    # ── Step 3: Preview ──────────────────────────────────────
-    logger.info("\nSTEP 3/4 — Results preview:")
-    pa  = [v for v in venues if v.get("priority") == "Priority A"]
-    pb  = [v for v in venues if v.get("priority") == "Priority B"]
-    pc  = [v for v in venues if v.get("priority") == "Priority C"]
-    bk  = [v for v in venues if v.get("borough") == "Brooklyn"]
-    mn  = [v for v in venues if v.get("borough") == "Manhattan"]
-
-    # Sort: Brooklyn A→B→C, then Manhattan A→B→C
+    # Sort A→B→C
     priority_ord = {"Priority A": 0, "Priority B": 1, "Priority C": 2}
-    bk_sorted = sorted(bk, key=lambda v: priority_ord.get(v.get("priority", ""), 2))
-    mn_sorted = sorted(mn, key=lambda v: priority_ord.get(v.get("priority", ""), 2))
-    ordered = bk_sorted + mn_sorted
-
-    print_venue_preview(ordered, n=20)
+    ordered = sorted(venues, key=lambda v: priority_ord.get(v.get("priority", ""), 2))
 
     if test_mode:
         logger.info("TEST MODE: skipping CSV export.")
         return ""
 
-    # ── Step 4: Export ───────────────────────────────────────
-    logger.info("STEP 4/4 — Exporting CSV...")
-    output_path = export_venues_to_csv(ordered)
+    # ── Step 3 & 4: Format & Export ───────────────────────────────────────
+    logger.info("\nSTEP 3/4 — Formatting data layout...")
+    logger.info("STEP 4/4 — Exporting to CSV...")
+    output_path = export_venues_to_csv(ordered, city=city)
 
     logger.info(f"""
 ┌──────────────────────────────────────────────────────────────────┐

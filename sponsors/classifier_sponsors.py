@@ -2,7 +2,7 @@
 classifier.py — Assigns sponsorship tiers to brands based on extracted data.
 """
 from typing import Dict
-from config import TIER_SCORE_RULES, TIER_1_SCORE, TIER_2_SCORE
+from sponsors.config_sponsors import TIER_SCORE_RULES, TIER_1_SCORE, TIER_2_SCORE
 
 
 def classify_tier(brand: Dict) -> str:

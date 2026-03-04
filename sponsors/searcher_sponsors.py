@@ -6,7 +6,7 @@ import time
 import logging
 from typing import List, Dict
 from googlesearch import search as google_search
-from config import SEARCH_QUERIES, MAX_RESULTS_PER_QUERY, SEARCH_DELAY
+from sponsors.config_sponsors import SEARCH_QUERIES, MAX_RESULTS_PER_QUERY, SEARCH_DELAY
 
 logger = logging.getLogger(__name__)
 

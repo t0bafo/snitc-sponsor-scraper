@@ -31,10 +31,17 @@ def score_venue(venue: Dict, signals: Dict) -> int:
     if signals.get("has_afrocultural"):
         score += PRIORITY_SCORE_RULES["has_afrocultural"]
 
-    if venue.get("borough", "").lower() == "brooklyn":
-        score += PRIORITY_SCORE_RULES["brooklyn_location"]
-    elif venue.get("borough", "").lower() == "manhattan":
-        score += PRIORITY_SCORE_RULES["manhattan_location"]
+    # Adjusting location-based scoring based on neighborhood
+    # Assuming config imports PRIORITY_NEIGHBORHOODS
+    # We will pass city in via signals.
+    city = signals.get("city", "nyc")
+    from venues.config_venues import PRIORITY_NEIGHBORHOODS
+    hood = venue.get("neighborhood", "").lower()
+    
+    if hood in PRIORITY_NEIGHBORHOODS.get(city, []):
+        score += PRIORITY_SCORE_RULES["primary_location"]
+    else:
+        score += PRIORITY_SCORE_RULES["secondary_location"]
 
     cap_str = venue.get("capacity", "")
     if cap_str:

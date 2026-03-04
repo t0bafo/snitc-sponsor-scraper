@@ -5,7 +5,7 @@ import time
 import logging
 import requests
 from typing import Optional, Dict
-from config import HEADERS, REQUEST_TIMEOUT, SCRAPE_DELAY
+from config_core import HEADERS, REQUEST_TIMEOUT, SCRAPE_DELAY
 
 logger = logging.getLogger(__name__)
 

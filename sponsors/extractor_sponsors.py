@@ -5,7 +5,7 @@ import re
 import logging
 from typing import Dict, List, Optional
 from bs4 import BeautifulSoup
-from config import (
+from sponsors.config_sponsors import (
     CATEGORIES, DIVERSITY_KEYWORDS, NYC_KEYWORDS,
     FOUNDER_KEYWORDS, EMAIL_PRIORITY_PREFIXES,
 )
@@ -24,7 +24,12 @@ IGNORE_EMAIL_DOMAINS = {
     "example.com", "sentry.io", "w3.org", "schema.org", "google.com",
     "apple.com", "cloudflare.com", "wix.com", "squarespace.com",
     "shopify.com", "bigcommerce.com", "godaddy.com", "wordpress.com",
-    "gmail.com", "yahoo.com", "hotmail.com",  # skip generic free providers for now
+    "gmail.com", "yahoo.com", "hotmail.com", "domain.com", "email.com",
+}
+
+IGNORE_EXTENSIONS = {
+    ".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".pdf", ".mp4",
+    ".js", ".css", ".ico", ".woff", ".woff2", ".ashx",
 }
 
 IGNORE_EMAIL_PREFIXES = {
@@ -33,21 +38,32 @@ IGNORE_EMAIL_PREFIXES = {
 }
 
 
+def is_valid_email(email: str) -> bool:
+    """Check if email looks like a real business contact."""
+    e = email.lower().strip()
+    if "@" not in e: return False
+    
+    if any(e.endswith(ext) for ext in IGNORE_EXTENSIONS):
+        return False
+        
+    local, domain = e.rsplit("@", 1)
+    if any(s in domain for s in ["sentry", "wix-code", "squarespace", "shopify", "example"]): 
+        return False
+    if domain in IGNORE_EMAIL_DOMAINS: return False
+    if len(domain) < 4 or "." not in domain: return False
+    if domain.split(".")[-1] in {"png", "jpg", "js", "css"}: return False
+    
+    if len(local) < 2 or len(local) > 40: return False
+    if re.match(r'^[a-f0-9]{20,}$', local): return False
+    if local in IGNORE_EMAIL_PREFIXES: return False
+    
+    return True
+
+
 def extract_emails(text: str, html: str = "") -> List[str]:
     """Extract and rank contact emails from page text and HTML."""
     raw_emails = set(EMAIL_REGEX.findall(text + " " + html))
-
-    valid = []
-    for email in raw_emails:
-        local, domain = email.lower().rsplit("@", 1)
-        # Filter junk
-        if domain in IGNORE_EMAIL_DOMAINS:
-            continue
-        if local in IGNORE_EMAIL_PREFIXES:
-            continue
-        if len(local) < 2 or len(domain) < 4:
-            continue
-        valid.append(email.lower())
+    valid = [e.lower() for e in raw_emails if is_valid_email(e)]
 
     # Sort: prioritize partnership-relevant prefixes
     def _priority(e):

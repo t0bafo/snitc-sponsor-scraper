@@ -17,28 +17,30 @@ EVENT_TYPE     = "Nightlife / Cultural — Afro House, Amapiano, Afrobeats"
 # ──────────────────────────────────────────────
 # SEARCH QUERIES
 # ──────────────────────────────────────────────
-SEARCH_QUERIES = [
-    "rooftop event venues Brooklyn NYC 200 300 capacity private",
-    "outdoor terrace private events Manhattan buyout 2026",
-    "rooftop bar buyout NYC 200-300 people nightlife",
-    "Brooklyn rooftop party venue private event space",
-    "rooftop event space Williamsburg Bushwick private hire",
-    "Manhattan rooftop venue private events nightlife",
-    "NYC rooftop nightlife venue rental DJ dancing",
-    "DUMBO Brooklyn rooftop event venue",
-    "Lower East Side rooftop bar private events NYC",
-    "Greenpoint Brooklyn rooftop event space",
-    "hotel rooftop NYC private event 200 capacity",
-    "Meatpacking District rooftop venue private party",
-    "Chelsea rooftop bar private event NYC",
-    "Brooklyn Heights rooftop terrace event space",
-    "Park Slope rooftop venue private hire",
-    "Peerspace rooftop Brooklyn 200 capacity",
-    "Venuelust NYC rooftop bar private events",
-    "EventUp rooftop venue NYC nightlife",
-    "rooftop venue NYC Afrobeats cultural event",
-    "NYC outdoor event space skyline views nightlife 2026",
-]
+SEARCH_QUERIES = {
+    "nyc": [
+        "rooftop event venues Brooklyn NYC 200 300 capacity private",
+        "outdoor terrace private events Manhattan buyout 2026",
+        "rooftop bar buyout NYC 200-300 people nightlife",
+        "Brooklyn rooftop party venue private event space",
+        "rooftop event space Williamsburg Bushwick private hire",
+        "Manhattan rooftop venue private events nightlife",
+    ],
+    "atlanta": [
+        "rooftop event venues Atlanta 200 300 capacity private",
+        "Midtown Atlanta outdoor terrace private events buyout",
+        "rooftop bar buyout Atlanta 200-300 people nightlife",
+        "Atlanta West Midtown party venue private event space",
+        "rooftop venue Atlanta Afrobeats cultural event",
+    ],
+    "dallas": [
+        "rooftop event venues Dallas 200 300 capacity private",
+        "Deep Ellum outdoor terrace private events buyout",
+        "rooftop bar buyout Dallas 200-300 people nightlife",
+        "Uptown Dallas party venue private event space",
+        "rooftop event space Dallas arts district private hire",
+    ]
+}
 
 # ──────────────────────────────────────────────
 # VENUE LISTING SITES (to search directly)
@@ -53,20 +55,26 @@ VENUE_DIRECTORY_URLS = [
 # ──────────────────────────────────────────────
 # PRIORITY NEIGHBORHOODS
 # ──────────────────────────────────────────────
-BROOKLYN_NEIGHBORHOODS = [
-    "williamsburg", "bushwick", "greenpoint", "dumbo",
-    "brooklyn heights", "park slope", "bedford-stuyvesant",
-    "bed-stuy", "crown heights", "red hook", "gowanus",
-    "boerum hill", "cobble hill", "ditmas park", "sunset park",
-]
-
-MANHATTAN_NEIGHBORHOODS = [
-    "lower east side", "les", "east village", "chelsea",
-    "meatpacking", "meatpacking district", "midtown",
-    "hell's kitchen", "soho", "tribeca", "flatiron",
-    "hudson yards", "upper west side", "upper east side",
-    "harlem", "washington heights", "morningside heights",
-]
+PRIORITY_NEIGHBORHOODS = {
+    "nyc": [
+        "williamsburg", "bushwick", "greenpoint", "dumbo",
+        "brooklyn heights", "park slope", "bedford-stuyvesant",
+        "bed-stuy", "crown heights", "red hook", "gowanus",
+        "lower east side", "les", "east village", "chelsea",
+        "meatpacking", "meatpacking district", "midtown",
+        "soho", "tribeca", "flatiron",
+    ],
+    "atlanta": [
+        "midtown", "west midtown", "buckhead", "old fourth ward",
+        "inman park", "downtown", "virginia-highland", "poncey-highland",
+        "sweet auburn", "grant park", "reynoldstown", "east atlanta village",
+    ],
+    "dallas": [
+        "deep ellum", "uptown", "downtown", "design district",
+        "oak lawn", "knox-henderson", "lower greenville", "bishop arts",
+        "trinity groves", "victory park",
+    ]
+}
 
 # ──────────────────────────────────────────────
 # VENUE TYPE KEYWORDS
@@ -176,8 +184,8 @@ AFROCULTURAL_KEYWORDS = [
 PRIORITY_SCORE_RULES = {
     "has_rooftop": 3,
     "has_private_events": 2,
-    "brooklyn_location": 2,
-    "manhattan_location": 1,
+    "primary_location": 2,    # Replaces brooklyn
+    "secondary_location": 1,  # Replaces manhattan
     "capacity_in_range": 2,
     "has_bar_service": 1,
     "has_views": 1,
@@ -202,7 +210,7 @@ CSV_COLUMNS = [
     "Venue Name",
     "Location",
     "Neighborhood",
-    "Borough",
+    "City",
     "Capacity",
     "Venue Type",
     "Description",

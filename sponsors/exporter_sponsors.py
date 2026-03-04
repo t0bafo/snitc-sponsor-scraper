@@ -5,12 +5,13 @@ import os
 import logging
 import pandas as pd
 from typing import List, Dict
-from config import OUTPUT_DIR, OUTPUT_FILE, CSV_COLUMNS
+from datetime import datetime
+from sponsors.config_sponsors import OUTPUT_DIR, CSV_COLUMNS
 
 logger = logging.getLogger(__name__)
 
 
-def export_to_csv(brands: List[Dict]) -> str:
+def export_to_csv(brands: List[Dict], city: str = "nyc") -> str:
     """
     Deduplicate, sort by tier, and export to CSV.
     Returns the path to the output file.
@@ -51,9 +52,13 @@ def export_to_csv(brands: List[Dict]) -> str:
     df = df.sort_values("_tier_sort").drop(columns=["_tier_sort"])
     df = df.reset_index(drop=True)
 
-    # Export
+    # Export to CSV with short timestamped filename
     os.makedirs(OUTPUT_DIR, exist_ok=True)
-    output_path = os.path.join(OUTPUT_DIR, OUTPUT_FILE)
+    # Format: s_nyc_0304_1521.csv (s for sponsors, month-day_hour-minute)
+    ts = datetime.now().strftime("%m%d_%H%M")
+    filename = f"s_{city.lower()}_{ts}.csv"
+    output_path = os.path.join(OUTPUT_DIR, filename)
+    
     df.to_csv(output_path, index=False)
 
     # Print summary to terminal
@@ -69,21 +74,3 @@ def export_to_csv(brands: List[Dict]) -> str:
     logger.info("="*60)
 
     return output_path
-
-
-def print_preview(brands: List[Dict], n: int = 10):
-    """Print a quick preview table to terminal."""
-    print(f"\n{'='*80}")
-    print(f"{'BRAND':<30} {'TIER':<8} {'CATEGORY':<18} {'NYC':<15} {'EMAIL'}")
-    print(f"{'-'*80}")
-    for b in brands[:n]:
-        emails = b.get("emails", [])
-        email = emails[0] if emails else "—"
-        print(
-            f"{b.get('brand_name','?')[:29]:<30} "
-            f"{b.get('tier','?'):<8} "
-            f"{b.get('category','?')[:17]:<18} "
-            f"{str(b.get('nyc_connection','?'))[:14]:<15} "
-            f"{email[:30]}"
-        )
-    print(f"{'='*80}\n")

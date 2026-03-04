@@ -13,16 +13,16 @@ import time
 from typing import List, Dict
 from urllib.parse import urlparse
 
-from seeds import SEED_BRANDS
 from scraper import fetch_page, fetch_contact_page, polite_sleep
-from extractor import (
+from sponsors.seeds_sponsors import SEED_BRANDS
+from sponsors.extractor_sponsors import (
     extract_emails, extract_instagram, extract_founders,
     detect_diversity, detect_nyc_connection, detect_category,
     extract_brand_name, generate_notes,
 )
-from classifier import classify_tier
-from exporter import export_to_csv, print_preview
-from config import OUTPUT_DIR
+from sponsors.classifier_sponsors import classify_tier
+from sponsors.exporter_sponsors import export_to_csv
+from sponsors.config_sponsors import OUTPUT_DIR
 
 logger = logging.getLogger(__name__)
 
@@ -122,7 +122,7 @@ def load_extra_urls() -> List[Dict]:
         return []
 
 
-def run_sponsor_pipeline(test_mode: bool = False, seeds_only: bool = False) -> str:
+def run_sponsor_pipeline(city: str = "nyc", test_mode: bool = False, seeds_only: bool = False) -> str:
     """Main sponsor pipeline. Returns path to output CSV."""
     banner = """
 ╔═══════════════════════════════════════════════════════════════╗
@@ -143,7 +143,7 @@ def run_sponsor_pipeline(test_mode: bool = False, seeds_only: bool = False) -> s
     extra_urls = [] if (test_mode or seeds_only) else load_extra_urls()
     total = len(seeds) + len(extra_urls)
     logger.info(f"\nSTEP 2/4 — Enriching {total} brands (scraping live websites)...")
-    logger.info(f"  Output will be saved to: output/snitc_sponsors.csv\n")
+    logger.info(f"  Target local connection context: {city.upper()}\n")
 
     brands: List[Dict] = []
     failed = 0
@@ -183,19 +183,18 @@ def run_sponsor_pipeline(test_mode: bool = False, seeds_only: bool = False) -> s
 
     logger.info(f"\n✓ Enriched {len(brands)} brands ({failed} errors)")
 
-    logger.info("\nSTEP 3/4 — Results preview:")
     tier1   = [b for b in brands if b.get("tier") == "Tier 1"]
     tier2   = [b for b in brands if b.get("tier") == "Tier 2"]
     tier3   = [b for b in brands if b.get("tier") == "Tier 3"]
     ordered = tier1 + tier2 + tier3
-    print_preview(ordered, n=20)
 
     if test_mode:
         logger.info("TEST MODE: skipping CSV export.")
         return ""
 
-    logger.info("STEP 4/4 — Exporting CSV...")
-    output_path = export_to_csv(ordered)
+    logger.info("\nSTEP 3/4 — Formatting data layout...")
+    logger.info("STEP 4/4 — Exporting to CSV...")
+    output_path = export_to_csv(ordered, city=city)
 
     logger.info(f"""
 ┌──────────────────────────────────────────────────────────────┐
