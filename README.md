@@ -16,7 +16,7 @@ The primary goal of this tool is to bridge the gap between "searching for prospe
 - **Multi-City Discovery**: Support for **NYC**, **Atlanta**, and **Dallas**.
 - **Smart Enrichment**: Goes beyond a simple search by scraping the target website to find:
     - **Capacity**: Prioritizes event/buyout numbers over restaurant seating.
-    - **Signals**: Detects presence of Rooftops, DJ/Nightlife setups, Private Event options, and Cultural relevance.
+    - **Signals**: Detects presence of Rooftops, DJ/Nightlife setups, or Retail environments (showrooms, concept stores), and evaluates Cultural relevance.
     - **Clean Contacts**: Filters out image assets, script IDs (like Sentry hashes), and junk generic emails.
 - **Fail-Safe Mode**: If search engines rate-limit the tool, it falls back to a curated `seeds_venues.py` list to ensure you always have high-quality leads.
 - **Deduplication**: Automatically removes duplicate venues or websites before export.
@@ -65,11 +65,12 @@ The tool is now **configuration-driven**. Instead of changing code, you can defi
 
 **Supported YAML fields:**
 - `event`: `name`, `date`, `type`
+- `venue_type`: Determines extraction pipeline (`nightlife` or `retail`)
 - `capacity`: `min`, `max`, `ideal_min`, `ideal_max`
 - `priority_neighborhoods`: List of neighborhoods to boost in scoring.
 - `search_queries`: Custom DuckDuckGo queries for venue discovery.
 - `sponsor_search_queries`: Custom queries for brand sponsor discovery.
-- `target_vibe`: Keywords that boost a venue's ranking (e.g., "sunset", "afrobeats").
+- `target_vibe`: Keywords that boost a venue's ranking (e.g., "sunset", "afrobeats", "sneakers").
 
 ### 🤝 Sponsor Scraping
 Identifies brand sponsors based on ownership and location criteria.
@@ -82,11 +83,12 @@ Identifies brand sponsors based on ownership and location criteria.
 ## 📂 Project Architecture
 
 - `main.py`: Entrypoint for CLI commands.
+- `events/`: Stores reusable YAML event profiles.
 - `venues/`: 
     - `pipeline.py`: Orchestrates the search → scrape → classify → export loop.
-    - `searcher_venues.py`: Custom DuckDuckGo scraper (bypasses standard search API limits).
-    - `extractor_venues.py`: High-accuracy parsing logic (regex-based email/capacity extraction).
-    - `seeds_venues.py`: Curated list of "Gold Standard" venues to ensure data quality.
+    - `searcher_nightlife.py` & `searcher_retail.py`: Target-specific custom DuckDuckGo scraper logic.
+    - `extractor_nightlife.py` & `extractor_retail.py`: High-accuracy parsing logic (regex-based email/capacity extraction).
+    - `seeds/`: Fallback "Gold Standard" venues (`nightlife.py`, `retail.py`) to ensure data quality.
 - `sponsors/`: Dedicated logic for discovering and ranking brand partners.
 - `scraper.py`: Core page-fetching utility with built-in "politeness" delays.
 
