@@ -6,7 +6,7 @@ import logging
 import pandas as pd
 from typing import List, Dict
 from datetime import datetime
-from sponsors.config_sponsors import OUTPUT_DIR, CSV_COLUMNS
+import sponsors.config_sponsors as cfg
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +40,7 @@ def export_to_csv(brands: List[Dict], city: str = "nyc") -> str:
             "Source URL": b.get("source_url", ""),
         })
 
-    df = pd.DataFrame(rows, columns=CSV_COLUMNS)
+    df = pd.DataFrame(rows, columns=cfg.CSV_COLUMNS)
 
     # Deduplicate by Brand Name (keep first occurrence)
     df = df.drop_duplicates(subset=["Brand Name"], keep="first")
@@ -53,11 +53,11 @@ def export_to_csv(brands: List[Dict], city: str = "nyc") -> str:
     df = df.reset_index(drop=True)
 
     # Export to CSV with short timestamped filename
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    os.makedirs(cfg.OUTPUT_DIR, exist_ok=True)
     # Format: s_nyc_0304_1521.csv (s for sponsors, month-day_hour-minute)
     ts = datetime.now().strftime("%m%d_%H%M")
     filename = f"s_{city.lower()}_{ts}.csv"
-    output_path = os.path.join(OUTPUT_DIR, filename)
+    output_path = os.path.join(cfg.OUTPUT_DIR, filename)
     
     df.to_csv(output_path, index=False)
 

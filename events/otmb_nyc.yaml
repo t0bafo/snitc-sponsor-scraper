@@ -1,0 +1,107 @@
+event_name: "On The Mood Board"
+city: "nyc"
+venue_type: "retail"
+date: "TBD"
+time: "2:00 PM – 6:00 PM"
+
+capacity:
+  min: 40
+  max: 100
+
+space_requirements:
+  sqft_min: 1000
+  sqft_max: 1500
+  sqft_acceptable_min: 800
+  sqft_acceptable_max: 2000
+  ceiling_height_min: 10
+
+neighborhoods:
+  - "SoHo"
+  - "Nolita"
+  - "Tribeca"
+  - "Williamsburg"
+  - "Greenpoint"
+  - "Dumbo"
+  - "Lower East Side"
+
+required_signals:
+  - "open_floor_plan"
+  - "natural_light OR transformable_space"
+
+preferred_signals:
+  - "storefront_windows"
+  - "white_walls"
+  - "high_ceilings"
+  - "retail_fixtures"
+
+search_queries:
+  general:
+    - "pop-up space rental nyc"
+    - "empty storefront rental manhattan"
+    - "retail space short-term lease brooklyn"
+  art_design:
+    - "art gallery rental soho"
+    - "design studio rental williamsburg"
+    - "showroom rental tribeca"
+  creative:
+    - "creative space rental brooklyn"
+    - "warehouse space dumbo"
+    - "loft rental williamsburg"
+  neighborhood_specific:
+    - "storefront rental soho"
+    - "pop-up shop nolita"
+    - "retail space williamsburg"
+  furniture_showrooms:
+    - "CB2 soho"
+    - "West Elm soho"
+    - "Room and Board nyc"
+    - "Design Within Reach manhattan"
+    - "modern furniture williamsburg"
+  sneaker_boutiques:
+    - "sneaker boutique nyc"
+    - "Extra Butter nyc"
+    - "premium sneaker store soho"
+    - "Kith nyc"
+  streetwear_stores:
+    - "streetwear boutique nyc"
+    - "Dover Street Market nyc"
+    - "concept store soho"
+    - "designer streetwear williamsburg"
+  vintage_clothing:
+    - "curated vintage clothing nyc"
+    - "vintage boutique williamsburg"
+    - "designer vintage soho"
+    - "upscale vintage brooklyn"
+  concept_stores:
+    - "concept store nyc"
+    - "lifestyle boutique soho"
+    - "multi-brand retail nyc"
+    - "editorial store williamsburg"
+
+scoring:
+  sqft_perfect_range: 25
+  sqft_acceptable: 15
+  storefront_windows: 20
+  natural_light: 15
+  high_ceilings: 15
+  open_floor_plan: 10
+  retail_fixtures: 10
+  white_walls: 10
+  transformable: 10
+  neighborhood_match: 15
+  central_location: 10
+  short_term_available: 10
+  furniture_showroom: 20
+  concept_store: 20
+  sneaker_boutique: 15
+  vintage_boutique: 15
+  curated_aesthetic: 10
+  private_events_available: 25
+  after_hours_rental: 20
+  chain_store: -15
+  fast_fashion: -10
+
+priority_tiers:
+  A: 80
+  B: 60
+  C: 40

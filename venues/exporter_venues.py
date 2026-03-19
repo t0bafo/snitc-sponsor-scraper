@@ -6,7 +6,7 @@ import logging
 import pandas as pd
 from typing import List, Dict
 from datetime import datetime
-from venues.config_venues import OUTPUT_DIR, CSV_COLUMNS
+import venues.config_venues as cfg
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +45,7 @@ def export_venues_to_csv(venues: List[Dict], city: str = "nyc") -> str:
             "Source URL":   v.get("source_url", ""),
         })
 
-    df = pd.DataFrame(rows, columns=CSV_COLUMNS)
+    df = pd.DataFrame(rows, columns=cfg.CSV_COLUMNS)
 
     # Deduplicate
     df = df.drop_duplicates(subset=["Venue Name"], keep="first")
@@ -61,11 +61,11 @@ def export_venues_to_csv(venues: List[Dict], city: str = "nyc") -> str:
     df = df.reset_index(drop=True)
 
     # Export to CSV with short timestamped filename
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    os.makedirs(cfg.OUTPUT_DIR, exist_ok=True)
     # Format: v_dallas_0304_1521.csv (v for venues, month-day_hour-minute)
     ts = datetime.now().strftime("%m%d_%H%M")
     filename = f"v_{city.lower()}_{ts}.csv"
-    output_path = os.path.join(OUTPUT_DIR, filename)
+    output_path = os.path.join(cfg.OUTPUT_DIR, filename)
     
     df.to_csv(output_path, index=False)
 

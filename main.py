@@ -10,7 +10,7 @@ USAGE
 ─────
   python main.py --mode venues --city nyc   # Default city
   python main.py --mode venues --city dallas --test
-  python main.py --mode venues --city atlanta --seeds
+  python main.py --mode venues --city nyc --config events/stargazing_nyc.yaml
 
   python main.py --mode sponsors --city dallas # Sponsor mode with city filter
 
@@ -44,8 +44,9 @@ def _parse_args():
     args = sys.argv[1:]
     mode       = None
     city       = "nyc"
+    config_path = None
     test_mode  = "--test"  in args
-    seeds_only = "--seeds" in args
+    seeds_only = "--seeds" in args or "--seeds_only" in args
 
     for a in args:
         if a.startswith("--mode="):
@@ -58,6 +59,11 @@ def _parse_args():
         elif a == "--city" and args.index(a) + 1 < len(args):
             city = args[args.index(a) + 1].lower()
 
+        elif a.startswith("--config="):
+            config_path = a.split("=", 1)[1]
+        elif a == "--config" and args.index(a) + 1 < len(args):
+            config_path = args[args.index(a) + 1]
+
     # Also accept positional: python main.py venues dallas
     if mode is None:
         for a in args:
@@ -68,11 +74,11 @@ def _parse_args():
     if mode is None:
         mode = "both"
 
-    return mode, city, test_mode, seeds_only
+    return mode, city, test_mode, seeds_only, config_path
 
 
 def main():
-    mode, city, test_mode, seeds_only = _parse_args()
+    mode, city, test_mode, seeds_only, config_path = _parse_args()
 
     valid_modes = ("venues", "sponsors", "both")
     if mode not in valid_modes:
@@ -88,10 +94,24 @@ def main():
 
     if mode in ("venues", "both"):
         from venues.pipeline import run_venue_pipeline
-        run_venue_pipeline(city=city, test_mode=test_mode, seeds_only=seeds_only)
+        from venues.config_venues import initialize_config
+        initialize_config(config_path, city=city)
+
+        # Also load raw YAML so pipeline can detect venue_type (retail vs nightlife)
+        raw_config = {}
+        if config_path:
+            import yaml, os
+            if os.path.exists(config_path):
+                with open(config_path) as f:
+                    raw_config = yaml.safe_load(f) or {}
+
+        run_venue_pipeline(city=city, test_mode=test_mode, seeds_only=seeds_only,
+                           raw_config=raw_config)
 
     if mode in ("sponsors", "both"):
         from sponsors.pipeline import run_sponsor_pipeline
+        from sponsors.config_sponsors import initialize_config as init_sponsors
+        init_sponsors(config_path, city=city)
         run_sponsor_pipeline(city=city, test_mode=test_mode, seeds_only=seeds_only)
 
     elapsed = time.time() - start

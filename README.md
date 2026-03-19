@@ -53,10 +53,23 @@ Identifies rooftops and event spaces based on capacity and vibe.
   ```bash
   ./run.sh --mode venues --city atlanta --seeds_only
   ```
-- **Test Mode (5 venues only)**:
+- **Custom Event Profile (YAML)**:
   ```bash
-  ./run.sh --mode venues --city dallas --test
+  ./run.sh --mode venues --city nyc --config events/stargazing_nyc.yaml
   ```
+
+---
+
+## ⚙️ Configuration (Event Profiles)
+The tool is now **configuration-driven**. Instead of changing code, you can define your event criteria in a YAML file in the `events/` folder.
+
+**Supported YAML fields:**
+- `event`: `name`, `date`, `type`
+- `capacity`: `min`, `max`, `ideal_min`, `ideal_max`
+- `priority_neighborhoods`: List of neighborhoods to boost in scoring.
+- `search_queries`: Custom DuckDuckGo queries for venue discovery.
+- `sponsor_search_queries`: Custom queries for brand sponsor discovery.
+- `target_vibe`: Keywords that boost a venue's ranking (e.g., "sunset", "afrobeats").
 
 ### 🤝 Sponsor Scraping
 Identifies brand sponsors based on ownership and location criteria.

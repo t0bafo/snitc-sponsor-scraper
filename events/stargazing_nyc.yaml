@@ -1,0 +1,45 @@
+# Stargazing Event Configuration (NYC) - Memorial Day Weekend 2026
+
+event:
+  name: "Saturday Night in the City (SNITC)"
+  tagline: "Stargazing"
+  date: "May 23, 2026 (Memorial Day Weekend)"
+  type: "Nightlife / Cultural — Afro House, Amapiano, Afrobeats"
+
+capacity:
+  min: 150
+  max: 400
+  ideal_min: 200
+  ideal_max: 300
+
+# High-priority neighborhoods for scoring
+priority_neighborhoods:
+  - williamsburg
+  - greenpoint
+  - dumbo
+  - brooklyn heights
+  - park slope
+  - bed-stuy
+  - crown heights
+  - les
+  - chelsea
+  - meatpacking
+
+# Event-specific search queries
+search_queries:
+  - "rooftop event venues Brooklyn NYC 200 300 capacity private"
+  - "outdoor terrace private events Brooklyn buyout 2026"
+  - "Brooklyn rooftop party venue private event space"
+  - "rooftop event space Williamsburg Greenpoint private hire"
+
+# Keywords that boost ranking for this specific event
+target_vibe:
+  - rooftop
+  - terrace
+  - skyline views
+  - sunset
+  - elevated
+  - premium
+  - afrobeats
+  - amapiano
+  - diaspora

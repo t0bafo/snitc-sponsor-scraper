@@ -22,11 +22,11 @@ from sponsors.extractor_sponsors import (
 )
 from sponsors.classifier_sponsors import classify_tier
 from sponsors.exporter_sponsors import export_to_csv
-from sponsors.config_sponsors import OUTPUT_DIR
+import sponsors.config_sponsors as cfg
 
 logger = logging.getLogger(__name__)
 
-EXTRA_URLS_FILE = os.path.join(OUTPUT_DIR, "extra_urls.json")
+EXTRA_URLS_FILE = os.path.join(cfg.OUTPUT_DIR, "extra_urls.json")
 
 
 def _base_url(url: str) -> str:
@@ -127,8 +127,8 @@ def run_sponsor_pipeline(city: str = "nyc", test_mode: bool = False, seeds_only:
     banner = """
 ╔═══════════════════════════════════════════════════════════════╗
 ║         SNITC BRAND SPONSOR SCRAPER — Antigravity Agent       ║
-║  Event : Saturday Night in the City, May 23 2026, Brooklyn    ║
-║  Target: 30-50 Black/Caribbean/Latin-owned NYC brands         ║
+║  Event : {cfg.EVENT_NAME:<53}║
+║  Date  : {cfg.EVENT_DATE:<53}║
 ╚═══════════════════════════════════════════════════════════════╝
 """
     print(banner)

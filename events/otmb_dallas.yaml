@@ -1,0 +1,119 @@
+event_name: "On The Mood Board"
+city: "dallas"
+venue_type: "retail"
+date: "2026-07-18"
+time: "2:00 PM – 6:00 PM"
+duration_hours: 4
+
+capacity:
+  min: 40
+  max: 100
+
+space_requirements:
+  sqft_min: 1000
+  sqft_max: 1500
+  sqft_acceptable_min: 800
+  sqft_acceptable_max: 2000
+  ceiling_height_min: 10
+  floor_plan: "open"
+
+neighborhoods:
+  - "Deep Ellum"
+  - "Design District"
+  - "Bishop Arts"
+  - "Knox-Henderson"
+  - "Trinity Groves"
+
+required_signals:
+  - "open_floor_plan"
+  - "natural_light OR transformable_space"
+
+preferred_signals:
+  - "storefront_windows"
+  - "white_walls"
+  - "high_ceilings"
+  - "retail_fixtures"
+  - "short_term_lease"
+
+search_queries:
+  general:
+    - "pop-up space rental dallas"
+    - "empty storefront rental dallas"
+    - "retail space short-term lease dallas"
+    - "temporary retail space dallas"
+  art_design:
+    - "art gallery rental deep ellum"
+    - "design studio rental design district"
+    - "showroom rental design district"
+    - "gallery space rental bishop arts"
+  creative:
+    - "creative space rental dallas"
+    - "warehouse event space trinity groves"
+    - "loft rental deep ellum"
+    - "industrial space rental dallas"
+  neighborhood_specific:
+    - "storefront rental deep ellum"
+    - "pop-up shop design district"
+    - "retail space bishop arts"
+    - "showroom knox henderson"
+  furniture_showrooms:
+    - "CB2 dallas"
+    - "West Elm dallas"
+    - "Room and Board dallas"
+    - "Design Within Reach dallas"
+    - "furniture showroom design district"
+    - "modern furniture store deep ellum"
+  sneaker_boutiques:
+    - "sneaker boutique dallas"
+    - "Sneaker Politics dallas"
+    - "premium sneaker store deep ellum"
+    - "luxury sneakers dallas"
+  streetwear_stores:
+    - "streetwear boutique dallas"
+    - "concept store dallas"
+    - "designer streetwear deep ellum"
+    - "urban fashion boutique dallas"
+  vintage_clothing:
+    - "curated vintage clothing dallas"
+    - "vintage boutique bishop arts"
+    - "designer vintage dallas"
+    - "upscale vintage store deep ellum"
+  concept_stores:
+    - "lifestyle boutique design district"
+    - "multi-brand retail dallas"
+    - "editorial store dallas"
+
+scoring:
+  # Size match
+  sqft_perfect_range: 25
+  sqft_acceptable: 15
+  # Physical space
+  storefront_windows: 20
+  natural_light: 15
+  high_ceilings: 15
+  open_floor_plan: 10
+  retail_fixtures: 10
+  white_walls: 10
+  transformable: 10
+  # Location
+  neighborhood_match: 15
+  central_location: 10
+  # Availability
+  short_term_available: 10
+  # Operating store types
+  furniture_showroom: 20
+  concept_store: 20
+  sneaker_boutique: 15
+  vintage_boutique: 15
+  curated_aesthetic: 10
+  # Event rental (CRITICAL)
+  private_events_available: 25
+  after_hours_rental: 20
+  # Deductions
+  chain_store: -15
+  fast_fashion: -10
+
+priority_tiers:
+  A: 80
+  B: 60
+  C: 40
